@@ -1,0 +1,27 @@
+{
+	"name": "an7/inline-media",
+	"type": "phile-plugin",
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Embeds images, YouTube, and Vimeo media using simple file name or URL inputs",
+    "homepage": "http://iaian7.com",
+    "keywords": ["cms","phile","content","image","video","media","embed","inline"],
+    "authors": [
+        {
+            "name": "James Doyle",
+            "email": "james2doyle@gmail.com",
+            "homepage": "http://ohdoylerules.com/",
+            "role": "Developer"
+        },
+        {
+            "name": "John Einselen",
+            "email": "john.einselen@gmail.com",
+            "homepage": "http://iaian7.com/",
+            "role": "Developer"
+        }
+    ],
+	"require": {
+        "phile-cms/phile": ">=1",
+        "phile-cms/plugin-installer-plugin": ">=1"
+	}
+}
