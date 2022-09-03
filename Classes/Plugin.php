@@ -8,7 +8,7 @@ use Phile\Exception;
 
 /**
   * InlineMedia
-  * version 0.6 modified 2016.08.11
+  * version 0.7 modified 2016.08.11
   *
   * Based on James Doyle's PhileInlineImage plugin and helped by the work of Dan Reeves and Philipp Schmitt
   * Recognises most image, Vimeo, and Youtube links, replacing them with embed code
@@ -81,69 +81,26 @@ class Plugin extends \Phile\Plugin\AbstractPlugin implements \Phile\Gateway\Even
 
 
 	public function on($eventKey, $data = null) {
-//		print("\n\n\tEVENT: ".$eventKey);
-//		print_r(get_defined_vars());
-
-		if ($eventKey == 'before_load_content') {
-			$result = str_replace(ROOT_DIR, \Phile\Utility::getBaseUrl()."/", $data['filePath']);
+		if ($eventKey == 'before_load_content') { // Create path for global use
+//			$result = str_replace(ROOT_DIR, "/", $data['filePath']); // Relative path
+			$result = str_replace(ROOT_DIR, \Phile\Utility::getBaseUrl()."/", $data['filePath']); // Absolute path
 			$result = str_replace(".md", "/", $result);
 			$this->page_url = $result;
-//			print("\n\t page_url: ".$this->page_url);
-		}
-
-		if ($eventKey == 'before_read_file_meta') { // changing the rawData will permanently update the meta tags, but NOT the body content!
-			if (isset($data['rawData'])) {
-				$result = $this->filter_content($data['rawData'], $this->page_url);
-				$data['rawData'] = $result;
-			}
-		}
-
-		if ($eventKey == 'after_read_file_meta') { // this is probably the prefered method, as new meta data tags can be created with the updated content (Image URL for preview images and Image OR Video embed for above-the-fold content, assuming that's the most efficient method)
+		} elseif ($eventKey == 'after_read_file_meta') { // this is probably the prefered method, as new meta data tags can be created with the updated content (Image URL for preview images and Image OR Video embed for above-the-fold content, assuming that's the most efficient method)
 			if (isset($data['meta']['preview'])) {
-				$data['meta']['preview_url'] = $this->filter_content($data['meta']['preview'], $this->page_url);
+				$data['meta']['preview_url'] = $this->page_url.$data['meta']['preview'];
 			} else {
 				$data['meta']['preview_url'] = "";
 			}
-			if (isset($data['meta']['image'])) {
-				$data['meta']['image_url'] = $this->filter_content($data['meta']['image'], $this->page_url);
-			} else {
-				$data['meta']['image_url'] = "";
-			}
-			// swap out "media" for "banner" perhaps?
 			if (isset($data['meta']['media'])) {
 				$data['meta']['media_embed'] = $this->filter_content($data['meta']['media'], $this->page_url);
 			} else {
 				$data['meta']['media_embed'] = "";
 			}
-			if (isset($data['rawData'])) {
-				$result = $this->filter_content($data['rawData'], $this->page_url);
-				$data['rawData'] = $result;
-			}
-		}
-
-		if ($eventKey == 'after_load_content') {
-			$content = $this->filter_content($data['rawData'], $this->page_url);
-			$data['rawData'] = $content;
-		}
-
-		if ($eventKey == 'before_parse_content') {
+		} elseif ($eventKey == 'after_parse_content') { // and this is where we have to change page content. Every other method appears to just be reset by reloading the file content again and again.
 			$content = $this->filter_content($data['content'], $this->page_url);
 			$data['content'] = $content;
 		}
-
-		if ($eventKey == 'after_parse_content') { // and this is where we have to change page content. Every other method appears to just be reset by reloading the file content again and again.
-			$content = $this->filter_content($data['content'], $this->page_url);
-			$data['content'] = $content;
-		}
-
-		$result = null;
-		print("\n\n\n\n\tEVENT: ".$eventKey);
-		if (isset($data['rawData'])) print("\n\n\n\t RAW DATA: ".$data['rawData']);
-		if (isset($data['content'])) print("\n\n\n\t CONTENT: ".$data['content']);
-//		if (isset($data['rawData'])) print("\n\t EVENT: ".$data['rawData']);
-//		print("\n\n\n");
-//		print_r(get_defined_vars());
-		print("\n\n\n\n");
 	}
 
 	private function filter_content($content, $path) {
@@ -153,28 +110,31 @@ class Plugin extends \Phile\Plugin\AbstractPlugin implements \Phile\Gateway\Even
 		// Image URL (needed for metadata processing)
 
 		// Image Embed
+
+
+// FIX THE <P> TAG ISSUE...NEEDS TO WORK BOTH WITH AND WITHOUT?
+
+
 //		$regex = "/(<p>)(.*?)\.(jpg|jpeg|png|gif|webp|svg)+(<\/p>)/i";
-		$regex = "/^(\\S+)\\.(jpg|jpeg|png|gif|webp|svg)/uim";
+		$regex = "/^(\\S+)\\.(jpg|jpeg|png|gif|webp|svg)/uim"; // this is currently broken by <p> tags that touch the file name
 //		preg_replace("/^(\\S+)\\.(jpg|jpeg|png|gif|webp|svg)/uim", "http://website.com/$1.$2", $searchText);
 		$replace = "\n".'<'.$this->settings['wrap_element'].' class="'.$this->settings['wrap_class_img'].'" style="background-image: url(\''.$path.'$1.$2\');"></'.$this->settings['wrap_element'].'>';
 		// replace image strings with image embeds
-		$content = str_replace("2011-07-NormalMapping-large.jpg", "REPLACED", $content);
-		$content = str_replace("2011-07-NormalMapping-thumbnail.jpg", "REALLYREPLACED", $content);
-//		$content = preg_replace($regex, $replace, $content);
+		$content = preg_replace($regex, $replace, $content);
 
 		// Vimeo
-		$regex = "/(<p>)(http\S+vimeo\.com\/)(\d*)(<\/p>)/i";
+		$regex = "/(http\S+vimeo\.com\/)(\d*)/i";
 //		$replace = "\n".'<iframe class="'.$this->settings['wrap_class_vid'].'" src="//player.vimeo.com/video/$3?title=0&amp;byline=0&amp;portrait=0&amp;color=b2b0af" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
-		$replace = "\n".'<iframe class="'.$this->settings['wrap_class_vid'].'" src="//player.vimeo.com/video/$3?title=0&amp;byline=0&amp;portrait=0&amp;color=b2b0af" width="100%" height="100%" allowfullscreen></iframe>';
+		$replace = "\n".'<iframe class="'.$this->settings['wrap_class_vid'].'" src="//player.vimeo.com/video/$2?title=0&amp;byline=0&amp;portrait=0&amp;color=b2b0af" width="100%" height="100%" allowfullscreen></iframe>';
 		// replace Vimeo links with Vimeo embeds
-//		$content = preg_replace($regex, $replace, $content);
+		$content = preg_replace($regex, $replace, $content);
 
 		// YouTube - additional URL solutions from http://stackoverflow.com/questions/3392993/php-regex-to-get-youtube-video-id
-		$regex = "/(<p>)(http\S+youtube\.com\/watch\?v=)(\S+)(<\/p>)/i";
+		$regex = "/(http\S+youtube\.com\/watch\?v=)(\S+)/i";
 //		$replace = "\n".'<iframe class="'.$this->settings['wrap_class_vid'].'" src="https://www.youtube.com/embed/$3" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
-		$replace = "\n".'<iframe class="'.$this->settings['wrap_class_vid'].'" src="https://www.youtube.com/embed/$3" width="100%" height="100%" allowfullscreen></iframe>';
+		$replace = "\n".'<iframe class="'.$this->settings['wrap_class_vid'].'" src="https://www.youtube.com/embed/$2" width="100%" height="100%" allowfullscreen></iframe>';
 		// replace YouTube links with Vimeo embeds
-//		$content = preg_replace($regex, $replace, $content);
+		$content = preg_replace($regex, $replace, $content);
 
 		return $content;
 	}
