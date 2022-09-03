@@ -70,19 +70,49 @@ class Plugin extends AbstractPlugin implements EventObserverInterface
 		if (!isset($content)) return null;
 
 		// Image Embed
-		$regex = "/^(<p>|)([\w-]+)\.(jpg|jpeg|png|gif|webp|svg)(<\/p>|)/mi";
-		$replace = '<'.$this->settings['wrap_element'].' class="'.$this->settings['wrap_class_img'].'" style="background-image: url(\''.$path.'$2.$3\');"></'.$this->settings['wrap_element'].'>';
+		$regex = "/^(<p>|)([\w-]+)\.(jpg|jpeg|png|webp|svg)(<\/p>|)/mi";
+		$replace = '<'.$this->settings['wrap_element'].' class="'.$this->settings['img_class'].'" style="background-image: url(\''.$path.'$2.$3\');"></'.$this->settings['wrap_element'].'>';
 		$content = preg_replace($regex, $replace, $content);
+
+// Match any image at the begining of a paragraph or on its own
+//		^(<p>|)([\w-%]+)\.(gif)(.*)(<\/p>|)
+// Only match images without paragraph text
+//		^(<p>)([\w-%]+)\.(gif)(<\/p>)
+// Only match images WITH additional text after them, removing the space between them. The original paragraph and text can be output with $1$4$5
+//		^(<p>)([\w-%]+)\.(gif) (.+)(<\/p>)
+//		^(<p>)([\w-%]+)\.(gif)(\n.+|.+)(<\/p>)
+
+		// Gif Embed
+		$regex = "/^(<p>)([\w-]+)\.(gif)(<\/p>)/mi";
+		$replace = '<'.$this->settings['wrap_element'].' class="'.$this->settings['gif_class'].'" style="background-image: url(\''.$path.'$2.$3\');"></'.$this->settings['wrap_element'].'>';
+		$content = preg_replace($regex, $replace, $content);
+		// Gif Embed with paragraph text and container
+		$regex = "/^(<p>)([\w-]+)\.(gif)(\n.+|.+)(<\/p>)/mi";
+		$replace = '<div class="'.$this->settings['container_class'].'"><'.$this->settings['wrap_element'].' class="'.$this->settings['gif_class_inline'].'" style="background-image: url(\''.$path.'$2.$3\');"></'.$this->settings['wrap_element'].'>$1$4$5</div>';
+		$content = preg_replace($regex, $replace, $content);
+
+
+//	THIS IS THE OVERLAY CODE USED IN THE TWIG TEMPLATE
+//		<a class="thumbnail" href="#{{ title }}_preview" onclick="{{ title }}_preview.play()" style="background-image: url({{ meta.previewimg }});"></a>
+//		<div class="lightbox animate" id="{{ title }}_preview">
+//			<a class="close" href="#!" onclick="{{ title }}_preview.pause()"></a>
+//			<iframe class="animate" src="https://player.vimeo.com/video/{{ meta.preview }}" allowfullscreen onload="{{ title }}_preview=new Vimeo.Player(this)"></iframe>
+//		</div>
 
 		// Vimeo
 		$regex = "/^(<p>|)(http\S+vimeo\.com\/)(\d+)(<\/p>|)/mi";
-		$replace = '<iframe class="'.$this->settings['wrap_class_vid'].'" src="https://player.vimeo.com/video/$3?title=0&amp;byline=0&amp;portrait=0&amp;color=b2b0af" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
+		$replace = '<iframe class="'.$this->settings['vid_class'].'" src="https://player.vimeo.com/video/$3?title=0&amp;byline=0&amp;portrait=0&amp;color=b2b0af" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
 		$content = preg_replace($regex, $replace, $content);
 
 		// YouTube
 		// additional URL solutions from http://stackoverflow.com/questions/3392993/php-regex-to-get-youtube-video-id
 		$regex = "/^(<p>|)(http\S+youtube\.com\/watch\?v=|http\S+youtu.be\/)(\w+)(<\/p>|)/mi";
-		$replace = '<iframe class="'.$this->settings['wrap_class_vid'].'" src="https://www.youtube.com/embed/$3" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
+		$replace = '<iframe class="'.$this->settings['vid_class'].'" src="https://www.youtube.com/embed/$3" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
+		$content = preg_replace($regex, $replace, $content);
+
+		// Add line breask!
+		$regex = "/--/mi";
+		$replace = '</br>';
 		$content = preg_replace($regex, $replace, $content);
 
 		return $content;
