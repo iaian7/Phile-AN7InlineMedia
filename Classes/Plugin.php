@@ -8,7 +8,7 @@ use Phile\Exception;
 
 /**
   * InlineMedia
-  * version 0.8.2 modified 2017.01.18
+  * version 0.8.5 modified 2017.06.07
   *
   * Based on James Doyle's PhileInlineImage plugin and helped by the work of Dan Reeves and Philipp Schmitt
   * Recognises most image, Vimeo, and Youtube links, replacing them with embed code
@@ -62,18 +62,18 @@ class Plugin extends \Phile\Plugin\AbstractPlugin implements \Phile\Gateway\Even
 		if (!isset($content)) return null;
 
 		// Image Embed
-		$regex = "/(<p>|)([\w-%]+)\.(jpg|jpeg|png|gif|webp|svg)(<\/p>|)/i";
+		$regex = "/^(<p>|)([\w-%]+)\.(jpg|jpeg|png|gif|webp|svg)(<\/p>|)/mi";
 		$replace = '<'.$this->settings['wrap_element'].' class="'.$this->settings['wrap_class_img'].'" style="background-image: url(\''.$path.'$2.$3\');"></'.$this->settings['wrap_element'].'>';
 		$content = preg_replace($regex, $replace, $content);
 
 		// Vimeo
-		$regex = "/(<p>|)(http\S+vimeo\.com\/)(\d+)(<\/p>|)/i";
+		$regex = "/^(<p>|)(http\S+vimeo\.com\/)(\d+)(<\/p>|)/mi";
 		$replace = '<iframe class="'.$this->settings['wrap_class_vid'].'" src="https://player.vimeo.com/video/$3?title=0&amp;byline=0&amp;portrait=0&amp;color=b2b0af" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
 		$content = preg_replace($regex, $replace, $content);
 
 		// YouTube
 		// additional URL solutions from http://stackoverflow.com/questions/3392993/php-regex-to-get-youtube-video-id
-		$regex = "/(<p>|)(http\S+youtube\.com\/watch\?v=|http\S+youtu.be\/)(\w+)(<\/p>|)/i";
+		$regex = "/^(<p>|)(http\S+youtube\.com\/watch\?v=|http\S+youtu.be\/)(\w+)(<\/p>|)/mi";
 		$replace = '<iframe class="'.$this->settings['wrap_class_vid'].'" src="https://www.youtube.com/embed/$3" width="100%" height="100%" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
 		$content = preg_replace($regex, $replace, $content);
 
