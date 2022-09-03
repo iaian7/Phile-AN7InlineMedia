@@ -1,7 +1,7 @@
 {
 	"name": "an7/inline-media",
 	"type": "phile-plugin",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "license": "MIT",
     "description": "Embeds images, YouTube, and Vimeo media using simple file name or URL inputs",
     "homepage": "http://iaian7.com",
